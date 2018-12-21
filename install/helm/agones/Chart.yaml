@@ -15,8 +15,8 @@
 # Declare variables to be passed into your templates.
 
 apiVersion: v1
-appVersion: "0.5.0.rc"
-version: 0.5.0.rc
+appVersion: "0.7.0-rc"
+version: 0.7.0-rc
 name: agones
 description: a library for hosting, running and scaling dedicated game servers on Kubernetes.
 keywords:
@@ -34,3 +34,4 @@ maintainers:
    url: https://groups.google.com/forum/#!forum/agones-discuss
 engine: gotpl
 icon: https://github.com/GoogleCloudPlatform/agones/raw/master/docs/agones.png
+tillerVersion: ">2.10.0"

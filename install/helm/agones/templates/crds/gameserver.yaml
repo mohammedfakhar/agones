@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{- if .Values.agones.crds.install }}
+
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -26,6 +28,22 @@ spec:
   group: stable.agones.dev
   version: v1alpha1
   scope: Namespaced
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    name: State
+    type: string
+  - JSONPath: .status.address
+    name: Address
+    type: string
+  - JSONPath: .status.ports[0].port
+    name: Port
+    type: string
+  - JSONPath: .status.nodeName
+    name: Node
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   names:
     kind: GameServer
     plural: gameservers
@@ -35,3 +53,5 @@ spec:
   validation:
     openAPIV3Schema:
       {{- include "gameserver.validation" . | indent 6 }}
+
+{{- end }}

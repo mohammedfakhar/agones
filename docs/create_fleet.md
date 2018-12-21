@@ -1,6 +1,6 @@
 # Quickstart Create a Game Server Fleet
 
-This guide covers how you can quickly get started using Agones to create a Fleet 
+This guide covers how you can quickly get started using Agones to create a Fleet
 of warm GameServers ready for you to allocate out of and play on!
 
 ## Prerequisites
@@ -11,8 +11,6 @@ The following prerequisites are required to create a GameServer:
 2. Agones controller installed in the targeted cluster
 3. kubectl properly configured
 4. Netcat which is already installed on most Linux/macOS distributions, for windows you can use [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
-
->NOTE: Agones required Kubernetes versions 1.9+ to run. See the [cluster requirements](../README.md#requirements) for more details.
 
 If you don't have a Kubernetes cluster you can follow [these instructions](../install/README.md) to create a cluster on Google Kubernetes Engine (GKE), Minikube or Azure Kubernetes Service (AKS), and install Agones.
 
@@ -44,7 +42,7 @@ fleet "simple-udp" created
 
 This has created a Fleet record inside Kubernetes, which in turn creates two warm [GameServers](gameserver_spec.md) to
 be available to being allocated for usage for a game session.
- 
+
 ```
 kubectl get fleet
 ```
@@ -55,7 +53,7 @@ NAME         AGE
 simple-udp   5m
 ```
 
-You can also see the GameServers that have been created by the Fleet by running `kubectl get gameservers`, 
+You can also see the GameServers that have been created by the Fleet by running `kubectl get gameservers`,
 the GameServer will be prefixed by `simple-udp`.
 
 ```
@@ -109,7 +107,7 @@ Spec:
           Creation Timestamp:  <nil>
         Spec:
           Containers:
-            Image:  gcr.io/agones-images/udp-server:0.3
+            Image:  gcr.io/agones-images/udp-server:0.5
             Name:   simple-udp
             Resources:
 Status:
@@ -225,7 +223,7 @@ status:
           creationTimestamp: null
         spec:
           containers:
-          - image: gcr.io/agones-images/udp-server:0.3
+          - image: gcr.io/agones-images/udp-server:0.5
             name: simple-udp
             resources: {}
     status:
@@ -289,10 +287,10 @@ grow and shrink.
 ### 6. Connect to the GameServer
 
 Since we've only got one allocation, we'll just grab the details of the IP and port of the
-only allocated `GameServer`: 
+only allocated `GameServer`:
 
 ```
-kubectl get $(kubectl get fleetallocation -o name) -o jsonpath='{.status.GameServer.staatus.GameServer.status.ports[0].port}'
+kubectl get $(kubectl get fleetallocation -o name) -o jsonpath='{.status.gameServer.status.ports[0].port}'
 ```
 
 This should output your Game Server IP address and port. (eg `10.130.65.208:7936`)
@@ -312,7 +310,7 @@ If you run `kubectl describe gs | grep State` again - either the GameServer will
 , or it will be in `Shutdown` state, on the way to being deleted.
 
 Since we are running a `Fleet`, Agones will always do it's best to ensure there are always the configured number
-of `GameServers` in the pool in either a `Ready` or `Allocated` state. 
+of `GameServers` in the pool in either a `Ready` or `Allocated` state.
 
 ### 7. Deploy a new version of the GameServer on the Fleet
 
@@ -327,7 +325,7 @@ Let's also allocate ourselves a `GameServer`
 kubectl create -f https://raw.githubusercontent.com/GoogleCloudPlatform/agones/master/examples/simple-udp/fleetallocation.yaml -o yaml
 ```
 
-We should now have four `Ready` `GameServers` and one `Allocated`. 
+We should now have four `Ready` `GameServers` and one `Allocated`.
 
 We can check this by running `kubectl get gs -o=custom-columns=NAME:.metadata.name,STATUS:.status.state,IP:.status.address,PORT:.status.ports`.
 
@@ -349,7 +347,7 @@ with a Container Port of `6000`.
 
 > NOTE: This will make it such that you can no longer connect to the simple-udp game server.  
 
-Run `watch kubectl get gs -o=custom-columns=NAME:.metadata.name,STATUS:.status.state,CONTAINERPORT:.spec.ports[0].containerPort` 
+Run `watch kubectl get gs -o=custom-columns=NAME:.metadata.name,STATUS:.status.state,CONTAINERPORT:.spec.ports[0].containerPort`
 until you can see that there are
 one of `7654`, which is the `Allocated` `GameServer`, and four instances to `6000` which
 is the new configuration.
@@ -358,4 +356,9 @@ You have now deployed a new version of your game!
 
 ## Next Steps
 
-If you want to use your own GameServer container make sure you have properly integrated the [Agones SDK](../sdks/).
+You can now create a fleet autoscaler to automatically resize your fleet based on the actual usage.
+See [Create a Fleet Autoscaler](./create_fleetautoscaler.md).
+
+Or if you want to try to use your own GameServer container make sure you have properly integrated the [Agones SDK](../sdks/).
+
+If you would like to learn how to programmatically allocate a Game Server from the fleet using the Agones API, see the [Allocator Service](./create_allocator_service.md) tutorial.

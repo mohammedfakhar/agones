@@ -19,15 +19,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGameServerSetGameServer(t *testing.T) {
 	gsSet := GameServerSet{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "namespace",
 			UID:       "1234",
+			Labels: map[string]string{
+				FleetNameLabel: "fleetname",
+			},
 		},
 		Spec: GameServerSetSpec{
 			Replicas: 10,
@@ -49,13 +52,15 @@ func TestGameServerSetGameServer(t *testing.T) {
 	assert.Equal(t, gsSet.ObjectMeta.Namespace, gs.ObjectMeta.Namespace)
 	assert.Equal(t, gsSet.ObjectMeta.Name+"-", gs.ObjectMeta.GenerateName)
 	assert.Equal(t, gsSet.ObjectMeta.Name, gs.ObjectMeta.Labels[GameServerSetGameServerLabel])
+	assert.Equal(t, gsSet.ObjectMeta.Labels[FleetNameLabel], gs.ObjectMeta.Labels[FleetNameLabel])
+
 	assert.Equal(t, gs.Spec, gsSet.Spec.Template.Spec)
-	assert.True(t, v1.IsControlledBy(gs, &gsSet))
+	assert.True(t, metav1.IsControlledBy(gs, &gsSet))
 }
 
 func TestGameServerSetValidateUpdate(t *testing.T) {
 	gsSet := GameServerSet{
-		ObjectMeta: v1.ObjectMeta{Name: "test"},
+		ObjectMeta: metav1.ObjectMeta{Name: "test"},
 		Spec: GameServerSetSpec{
 			Replicas: 10,
 			Template: GameServerTemplateSpec{

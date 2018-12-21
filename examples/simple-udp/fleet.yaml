@@ -25,10 +25,9 @@ spec:
     spec:
       ports:
       - name: default
-        portPolicy: "dynamic"
         containerPort: 7654
       template:
         spec:
           containers:
           - name: simple-udp
-            image: gcr.io/agones-images/udp-server:0.4
+            image: gcr.io/agones-images/udp-server:0.5

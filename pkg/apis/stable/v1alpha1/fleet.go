@@ -22,16 +22,15 @@ import (
 )
 
 const (
-	// FleetGameServerSetLabel is the label that the name of the Fleet
-	// is set to on the GameServerSet the Fleet controls
-	FleetGameServerSetLabel = stable.GroupName + "/fleet"
+	// FleetNameLabel is the label that the name of the Fleet
+	// is set to on GameServerSet and GameServer  the Fleet controls
+	FleetNameLabel = stable.GroupName + "/fleet"
 )
 
 // +genclient
-// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Fleet is the data structure for a gameserver resource
+// Fleet is the data structure for a Fleet resource
 type Fleet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -42,7 +41,7 @@ type Fleet struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// FleetList is a list of GameServer resources
+// FleetList is a list of Fleet resources
 type FleetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -56,11 +55,13 @@ type FleetSpec struct {
 	Replicas int32 `json:"replicas"`
 	// Deployment strategy
 	Strategy appsv1.DeploymentStrategy `json:"strategy"`
+	// Scheduling strategy. Defaults to "Packed".
+	Scheduling SchedulingStrategy `json:"scheduling"`
 	// Template the GameServer template to apply for this Fleet
 	Template GameServerTemplateSpec `json:"template"`
 }
 
-// FleetStatus is the status of a GameServerSet
+// FleetStatus is the status of a Fleet
 type FleetStatus struct {
 	// Replicas the total number of current GameServer replicas
 	Replicas int32 `json:"replicas"`
@@ -75,7 +76,8 @@ func (f *Fleet) GameServerSet() *GameServerSet {
 	gsSet := &GameServerSet{
 		ObjectMeta: *f.Spec.Template.ObjectMeta.DeepCopy(),
 		Spec: GameServerSetSpec{
-			Template: f.Spec.Template,
+			Template:   f.Spec.Template,
+			Scheduling: f.Spec.Scheduling,
 		},
 	}
 
@@ -94,7 +96,7 @@ func (f *Fleet) GameServerSet() *GameServerSet {
 		gsSet.ObjectMeta.Labels = make(map[string]string, 1)
 	}
 
-	gsSet.ObjectMeta.Labels[FleetGameServerSetLabel] = f.ObjectMeta.Name
+	gsSet.ObjectMeta.Labels[FleetNameLabel] = f.ObjectMeta.Name
 
 	return gsSet
 }
@@ -103,6 +105,10 @@ func (f *Fleet) GameServerSet() *GameServerSet {
 func (f *Fleet) ApplyDefaults() {
 	if f.Spec.Strategy.Type == "" {
 		f.Spec.Strategy.Type = appsv1.RollingUpdateDeploymentStrategyType
+	}
+
+	if f.Spec.Scheduling == "" {
+		f.Spec.Scheduling = Packed
 	}
 
 	if f.Spec.Strategy.Type == appsv1.RollingUpdateDeploymentStrategyType {

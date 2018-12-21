@@ -21,13 +21,12 @@ import (
 	"net"
 	"time"
 
-	"k8s.io/apimachinery/pkg/labels"
-
 	"agones.dev/agones/pkg/apis/stable/v1alpha1"
 	"agones.dev/agones/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 
@@ -84,6 +83,9 @@ func (f *Framework) CreateGameServerAndWaitUntilReady(ns string, gs *v1alpha1.Ga
 		return nil, fmt.Errorf("waiting for %v GameServer instance readiness timed out (%v): %v",
 			gs.Spec, gs.Name, err)
 	}
+	if len(readyGs.Status.Ports) == 0 {
+		return nil, fmt.Errorf("Ready GameServer instance has no port: %v", readyGs.Status)
+	}
 
 	return readyGs, nil
 }
@@ -116,7 +118,7 @@ func (f *Framework) WaitForGameServerState(gs *v1alpha1.GameServer, state v1alph
 
 // WaitForFleetCondition waits for the Fleet to be in a specific condition
 func (f *Framework) WaitForFleetCondition(flt *v1alpha1.Fleet, condition func(fleet *v1alpha1.Fleet) bool) error {
-	err := wait.PollImmediate(2*time.Second, 120*time.Second, func() (bool, error) {
+	err := wait.PollImmediate(2*time.Second, 5*time.Minute, func() (bool, error) {
 		fleet, err := f.AgonesClient.StableV1alpha1().Fleets(flt.ObjectMeta.Namespace).Get(flt.ObjectMeta.Name, metav1.GetOptions{})
 		if err != nil {
 			return true, err
@@ -131,7 +133,7 @@ func (f *Framework) WaitForFleetCondition(flt *v1alpha1.Fleet, condition func(fl
 func (f *Framework) ListGameServersFromFleet(flt *v1alpha1.Fleet) ([]v1alpha1.GameServer, error) {
 	var results []v1alpha1.GameServer
 
-	opts := metav1.ListOptions{LabelSelector: labels.Set{v1alpha1.FleetGameServerSetLabel: flt.ObjectMeta.Name}.String()}
+	opts := metav1.ListOptions{LabelSelector: labels.Set{v1alpha1.FleetNameLabel: flt.ObjectMeta.Name}.String()}
 	gsSetList, err := f.AgonesClient.StableV1alpha1().GameServerSets(flt.ObjectMeta.Namespace).List(opts)
 	if err != nil {
 		return results, err
@@ -150,7 +152,7 @@ func (f *Framework) ListGameServersFromFleet(flt *v1alpha1.Fleet) ([]v1alpha1.Ga
 	return results, nil
 }
 
-// FleetReadyCountCondition checks the ready count in a fleet
+// FleetReadyCount returns the ready count in a fleet
 func FleetReadyCount(amount int32) func(fleet *v1alpha1.Fleet) bool {
 	return func(fleet *v1alpha1.Fleet) bool {
 		return fleet.Status.ReadyReplicas == amount

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # build
-FROM golang:1.10.3 as builder
+FROM golang:1.11.4 as builder
 WORKDIR /go/src/simple-udp
 
 COPY examples/simple-udp/main.go .
@@ -21,7 +21,7 @@ COPY . /go/src/agones.dev/agones
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server .
 
 # final image
-FROM alpine:3.7
+FROM alpine:3.8
 
 RUN adduser -D server
 COPY --from=builder /go/src/simple-udp/server /home/server/server

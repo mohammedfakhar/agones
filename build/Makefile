@@ -24,7 +24,7 @@
 #
 
 # base version target. This is usually the next release.
-base_version = 0.5.0
+base_version = 0.7.0
 
 # agones image release registry
 release_registry = gcr.io/agones-images
@@ -35,7 +35,7 @@ release_registry = gcr.io/agones-images
 #
 
 # Version defaults to the short hash of the latest commit
-VERSION ?= $(base_version)-$(shell git rev-parse --short HEAD)
+VERSION ?= $(base_version)-$(shell git rev-parse --short=7 HEAD)
 # The registry that is being used to store docker images
 REGISTRY ?= $(release_registry)
 # kubectl configuration to use
@@ -43,11 +43,13 @@ KUBECONFIG ?= ~/.kube/config
 # The (gcloud) test cluster that is being worked against
 GCP_CLUSTER_NAME ?= test-cluster
 GCP_CLUSTER_ZONE ?= us-west1-c
+GCP_BUCKET_CHARTS ?= agones-chart
 # the profile to use when developing on minikube
 MINIKUBE_PROFILE ?= agones
+GO_BUILD_TAGS ?= none
 
 # Game Server image to use while doing end-to-end tests
-GS_TEST_IMAGE ?= gcr.io/agones-images/udp-server:0.4
+GS_TEST_IMAGE ?= gcr.io/agones-images/udp-server:0.5
 
 # Directory that this Makefile is in.
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -57,16 +59,20 @@ agones_path := $(realpath $(build_path)/..)
 kubeconfig_path := $(dir $(KUBECONFIG))
 kubeconfig_file := $(notdir $(KUBECONFIG))
 
+helm_path := ~/.helm
+
 agones_package = agones.dev/agones
 mount_path = /go/src/$(agones_package)
 common_mounts = -v $(build_path)/.config/gcloud:/root/.config/gcloud \
 				-v $(kubeconfig_path):/root/.kube \
+				-v $(helm_path):/root/.helm \
 				-v $(agones_path):$(mount_path)
 
 build_tag = agones-build:$(build_version)
 build_remote_tag = $(REGISTRY)/$(build_tag)
 controller_tag = $(REGISTRY)/agones-controller:$(VERSION)
 sidecar_tag = $(REGISTRY)/agones-sdk:$(VERSION)
+ping_tag = $(REGISTRY)/agones-ping:$(VERSION)
 
 go_version_flags = -ldflags "-X agones.dev/agones/pkg.Version=$(VERSION)"
 DOCKER_RUN ?= docker run --rm $(common_mounts) -e "KUBECONFIG=/root/.kube/$(kubeconfig_file)" $(DOCKER_RUN_ARGS) $(build_tag)
@@ -106,7 +112,32 @@ endif
 build: build-images build-sdks
 
 # build the docker images
-build-images: build-controller-image build-agones-sdk-image
+build-images: build-controller-image build-agones-sdk-image build-ping-image
+
+# package the current agones helm chart
+build-chart: RELEASE_VERSION ?= $(base_version)
+build-chart: CHART_DIR ?= install/helm/agones/
+build-chart: $(ensure-build-image)
+	docker run --rm $(common_mounts) -w $(mount_path) $(build_tag) bash -c \
+		"mkdir -p install/helm/bin/ && rm -rf install/helm/bin/* && \
+			helm init --client-only && helm package -d install/helm/bin/ --version $(RELEASE_VERSION) $(CHART_DIR)"
+
+# push the current chart to google cloud storage and update the index
+push-chart: $(ensure-build-image) build-chart
+	docker run --rm $(common_mounts) -w $(mount_path) $(build_tag) bash -c \
+		"gsutil copy gs://$(GCP_BUCKET_CHARTS)/index.yaml ./install/helm/bin/index.yaml || /bin/true && \
+		helm repo index --merge ./install/helm/bin/index.yaml ./install/helm/bin && \
+		cat ./install/helm/bin/index.yaml && ls ./install/helm/bin/ && \
+		gsutil copy ./install/helm/bin/*.* gs://$(GCP_BUCKET_CHARTS)/"
+
+# push a specific release useful to push previous missing release
+push-release-chart: RELEASE_VERSION ?= $(base_version)
+push-release-chart: $(ensure-build-image)
+	rm -rf /tmp/agones $(agones_path)/install/.helm-$(RELEASE_VERSION)/
+	mkdir -p $(agones_path)/install/.helm-$(RELEASE_VERSION)/
+	cd /tmp && git clone --single-branch -b release-$(RELEASE_VERSION) git@github.com:GoogleCloudPlatform/agones.git
+	mv /tmp/agones/install/helm/agones $(agones_path)/install/.helm-$(RELEASE_VERSION)/
+	CHART_DIR=install/.helm-$(RELEASE_VERSION)/agones $(MAKE) push-chart
 
 #build all the sdks
 build-sdks: build-sdk-cpp
@@ -117,7 +148,7 @@ test: $(ensure-build-image) test-go test-install-yaml
 # Run go tests
 test-go:
 	docker run --rm $(common_mounts) $(build_tag) go test -race $(agones_package)/pkg/... \
-	$(agones_package)/sdks/...
+	$(agones_package)/sdks/... $(agones_package)/cmd/...
 
 # Runs end-to-end tests on the current configured cluster
 # For minikube user the minikube-test-e2e targets
@@ -138,31 +169,39 @@ test-install-yaml:
 	diff /tmp/agones-install/install.yaml.sorted /tmp/agones-install/install.current.yaml.sorted
 
 # Push all the images up to $(REGISTRY)
-push: push-controller-image push-agones-sdk-image
+push: push-controller-image push-agones-sdk-image push-ping-image
 
 # Installs the current development version of Agones into the Kubernetes cluster
 install: ALWAYS_PULL_SIDECAR := true
 install: IMAGE_PULL_POLICY := "Always"
+install: PING_SERVICE_TYPE := "LoadBalancer"
+install: CRD_CLEANUP := true
 install: $(ensure-build-image) install-custom-pull-secret
 	$(DOCKER_RUN) \
 		helm upgrade --install --wait --namespace=agones-system\
-		--set agones.image.tag=$(VERSION),agones.image.registry=$(REGISTRY),agones.image.controller.pullPolicy=$(IMAGE_PULL_POLICY),agones.image.sdk.alwaysPull=$(ALWAYS_PULL_SIDECAR),agones.image.controller.pullSecret=$(IMAGE_PULL_SECRET) \
+		--set agones.image.tag=$(VERSION),agones.image.registry=$(REGISTRY) \
+		--set agones.image.controller.pullPolicy=$(IMAGE_PULL_POLICY),agones.image.sdk.alwaysPull=$(ALWAYS_PULL_SIDECAR) \
+		--set agones.image.controller.pullSecret=$(IMAGE_PULL_SECRET) \
+		--set agones.ping.http.serviceType=$(PING_SERVICE_TYPE),agones.ping.udp.serviceType=$(PING_SERVICE_TYPE) \
+		--set agones.crds.cleanupOnDelete=$(CRD_CLEANUP) \
 		agones $(mount_path)/install/helm/agones/
 
 uninstall: $(ensure-build-image)
 	$(DOCKER_RUN) \
 		helm delete --purge agones
 
+
 # Build a static binary for the gameserver controller
 build-controller-binary: $(ensure-build-image)
 	docker run --rm -e "CGO_ENABLED=0" $(common_mounts) $(build_tag) go build \
-		-o $(mount_path)/cmd/controller/bin/controller -a $(go_version_flags) -installsuffix cgo $(agones_package)/cmd/controller
+	-tags $(GO_BUILD_TAGS) -o $(mount_path)/cmd/controller/bin/controller \
+	-a $(go_version_flags) -installsuffix cgo $(agones_package)/cmd/controller
 
 # Lint the go source code.
 # use LINT_TIMEOUT to manipulate the linter timeout
 lint: LINT_TIMEOUT ?= 15m
 lint: $(ensure-build-image)
-	docker run --rm $(common_mounts) -w $(mount_path) $(DOCKER_RUN_ARGS) $(build_tag) bash -c \
+	docker run -t -e "TERM=xterm-256color" --rm $(common_mounts) -w $(mount_path) $(DOCKER_RUN_ARGS) $(build_tag) bash -c \
 		"golangci-lint run ./examples/... && golangci-lint run --deadline $(LINT_TIMEOUT) ./..."
 
 # Build the image for the gameserver controller
@@ -188,6 +227,20 @@ build-agones-sdk-binary: $(ensure-build-image)
 build-agones-sdk-image: $(ensure-build-image) build-agones-sdk-binary
 	docker build $(agones_path)/cmd/sdk-server/ --tag=$(sidecar_tag) $(DOCKER_BUILD_ARGS)
 
+# Build a static binary for the ping service
+build-ping-binary: $(ensure-build-image)
+	docker run --rm -e "CGO_ENABLED=0" $(common_mounts) $(build_tag) go build \
+	-tags $(GO_BUILD_TAGS) -o $(mount_path)/cmd/ping/bin/ping \
+	-a $(go_version_flags) -installsuffix cgo $(agones_package)/cmd/ping
+
+# Pushes up the ping image
+push-ping-image: $(ensure-build-image)
+	docker push $(ping_tag)
+
+# Build the image for the ping service
+build-ping-image: $(ensure-build-image) build-ping-binary
+	docker build $(agones_path)/cmd/ping/ --tag=$(ping_tag) $(DOCKER_BUILD_ARGS)
+
 # Build the cpp sdk linux archive
 build-sdk-cpp: $(ensure-build-image)
 	docker run --rm $(common_mounts) -w $(mount_path)/sdks/cpp $(build_tag) make build install archive VERSION=$(VERSION)
@@ -201,6 +254,7 @@ gen-install: $(ensure-build-image)
 	docker run --rm $(common_mounts) $(DOCKER_RUN_ARGS) $(build_tag) bash -c \
 		'helm template --name=agones-manual --namespace agones-system $(mount_path)/install/helm/agones \
 		--set agones.controller.generateTLS=false \
+		--set agones.crds.cleanupOnDelete=false \
 		> $(mount_path)/install/yaml/install.yaml'
 
 # Generate the SDK gRPC server and client code
@@ -245,6 +299,7 @@ clean-build-image:
 ensure-build-config:
 	-mkdir -p $(kubeconfig_path)
 	-mkdir -p $(build_path)/.config/gcloud
+	-mkdir -p $(helm_path)
 
 # create the build image if it doesn't exist
 ensure-build-image: ensure-build-config
@@ -263,20 +318,35 @@ push-build-image:
 	docker tag $(build_tag) $(build_remote_tag)
 	docker push $(build_remote_tag)
 
+# port forward the agones controller.
+# useful for pprof and stats viewing, etc
+controller-portforward: PORT ?= 6060
+controller-portforward:
+	docker run --rm -it $(common_mounts) $(DOCKER_RUN_ARGS) -p $(PORT):$(PORT) $(build_tag) \
+		kubectl port-forward deployments/agones-controller -n agones-system $(PORT)
+
+# start pprof with a web ui
+pprof-web:
+	docker run --rm -it --network=host $(common_mounts) $(DOCKER_RUN_ARGS) $(build_tag) \
+		go tool pprof -http :6061 http://localhost:6060
+
 # generate a changelog using github-changelog-generator
 gen-changelog: RELEASE_VERSION ?= $(base_version)
 gen-changelog:
-	@read -p 'Github Token: ' TOKEN && \
-	docker run -it --rm -v "$(agones_path)":/usr/local/src/your-app ferrarimarco/github-changelog-generator:1.14.3 \
-		GoogleCloudPlatform/agones --bug-labels=kind/bug --enhancement-labels=kind/feature \
+	read -p 'Github Token: ' TOKEN && \
+    docker run -it --rm -v "$(agones_path)":/project markmandel/github-changelog-generator \
+		--user=GoogleCloudPlatform --project=agones \
+		--bug-labels=kind/bug --enhancement-labels=kind/feature \
+		--breaking-labels=kind/breaking --security-labels=area/security \
 		--future-release "v$(RELEASE_VERSION)" \
-		--token=$$TOKEN
+		--token $$TOKEN
 
 # Creates a release. Version defaults to the base_version
 # - Checks out a release branch
 # - Build binaries and images
 # - Creates sdk and binary archives, and moves the into the /release folder for upload
 # - Creates a zip of the install.yaml, LICENCE and README.md for installation
+# - Pushes the current chart version to the helm repository hosted on gcs.
 do-release: RELEASE_VERSION ?= $(base_version)
 do-release:
 	@echo "Starting release for version: $(RELEASE_VERSION)"
@@ -291,7 +361,8 @@ do-release:
 	cp $(agones_path)/sdks/cpp/bin/agonessdk-$(RELEASE_VERSION)-dev-linux-arch_64.tar.gz $(agones_path)/release
 	cp $(agones_path)/sdks/cpp/bin/agonessdk-$(RELEASE_VERSION)-src.zip $(agones_path)/release
 	cd $(agones_path) &&  zip -r ./release/agones-install-$(RELEASE_VERSION).zip ./README.md ./install ./LICENSE
-	$(MAKE) gcloud-auth-docker push VERSION=$(RELEASE_VERSION)
+	$(MAKE) push-chart
+	$(MAKE) gcloud-auth-docker push REGISTRY=$(release_registry) VERSION=$(RELEASE_VERSION)
 	git push -u upstream release-$(RELEASE_VERSION)
 	@echo "Now go make the $(RELEASE_VERSION) release on Github!"
 
@@ -351,8 +422,10 @@ gcloud-e2e-test-cluster: $(ensure-build-image)
 	GCP_CLUSTER_NAME=e2e-test-cluster GCP_CLUSTER_ZONE=us-west1-c $(MAKE) gcloud-auth-cluster
 	docker run --rm $(common_mounts) $(DOCKER_RUN_ARGS) $(build_tag) \
 		kubectl apply -f $(mount_path)/build/helm.yaml
-	docker run --rm $(common_mounts) $(DOCKER_RUN_ARGS) $(build_tag) helm init --service-account helm --wait && \
-		 helm install --wait --set Replicas=1,uiService.type=ClusterIP --name consul stable/consul
+	docker run --rm $(common_mounts) $(DOCKER_RUN_ARGS) $(build_tag) \
+		helm init --service-account helm --wait
+	docker run --rm $(common_mounts) $(DOCKER_RUN_ARGS) $(build_tag) \
+		helm install --wait --set Replicas=1,uiService.type=ClusterIP --name consul stable/consul
 
 # Deletes the gcloud e2e cluster and cleanup any left pvc volumes
 clean-gcloud-e2e-test-cluster: $(ensure-build-image)
@@ -393,9 +466,8 @@ minikube-test-cluster: DOCKER_RUN_ARGS+=--network=host -v $(minikube_cert_mount)
 minikube-test-cluster: $(ensure-build-image) minikube-agones-profile
 	# localkube bootstrapper fixes issues with profiles
 	$(MINIKUBE) start --kubernetes-version v1.10.0 --vm-driver $(MINIKUBE_DRIVER) \
-		--bootstrapper=localkube \
-		--extra-config=apiserver.Admission.PluginNames=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota \
-		--extra-config=apiserver.Authorization.Mode=RBAC
+		--extra-config=apiserver.admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota \
+		--extra-config=apiserver.authorization-mode=RBAC
 	# wait until the master is up
 	until docker run --rm $(common_mounts) $(DOCKER_RUN_ARGS) $(build_tag) kubectl cluster-info; \
 		do \
@@ -422,11 +494,16 @@ minikube-shell: $(ensure-build-image) minikube-agones-profile
 minikube-push: minikube-agones-profile
 	$(MAKE) minikube-transfer-image TAG=$(sidecar_tag)
 	$(MAKE) minikube-transfer-image TAG=$(controller_tag)
+	$(MAKE) minikube-transfer-image TAG=$(ping_tag)
 
 # Installs the current development version of Agones into the Kubernetes cluster.
 # Use this instead of `make install`, as it disables PullAlways on the install.yaml
 minikube-install: minikube-agones-profile
-	$(MAKE) install DOCKER_RUN_ARGS="--network=host -v $(minikube_cert_mount)" ALWAYS_PULL_SIDECAR=false IMAGE_PULL_POLICY=IfNotPresent
+	$(MAKE) install DOCKER_RUN_ARGS="--network=host -v $(minikube_cert_mount)" ALWAYS_PULL_SIDECAR=false \
+		IMAGE_PULL_POLICY=IfNotPresent PING_SERVICE_TYPE=NodePort
+
+minikube-uninstall: $(ensure-build-image) minikube-agones-profile
+	$(MAKE) uninstall DOCKER_RUN_ARGS="--network=host -v $(minikube_cert_mount)"
 
 # Convenience target for transferring images into minikube.
 # Use TAG to specify the image to transfer into minikube
@@ -436,3 +513,7 @@ minikube-transfer-image:
 # Runs e2e tests against our minikube
 minikube-test-e2e: DOCKER_RUN_ARGS=--network=host -v $(minikube_cert_mount)
 minikube-test-e2e: minikube-agones-profile test-e2e
+
+# minikube port forwarding
+minikube-controller-portforward:
+	$(MAKE) controller-portforward DOCKER_RUN_ARGS="--network=host -v $(minikube_cert_mount)"

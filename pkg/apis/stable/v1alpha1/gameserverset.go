@@ -28,7 +28,6 @@ const (
 )
 
 // +genclient
-// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // GameServerSet is the data structure a set of GameServers
@@ -56,6 +55,8 @@ type GameServerSetList struct {
 type GameServerSetSpec struct {
 	// Replicas are the number of GameServers that should be in this set
 	Replicas int32 `json:"replicas"`
+	// Scheduling strategy. Defaults to "Packed".
+	Scheduling SchedulingStrategy `json:"scheduling,omitempty"`
 	// Template the GameServer template to apply for this GameServerSet
 	Template GameServerTemplateSpec `json:"template"`
 }
@@ -93,6 +94,8 @@ func (gsSet *GameServerSet) GameServer() *GameServer {
 		Spec:       *gsSet.Spec.Template.Spec.DeepCopy(),
 	}
 
+	gs.Spec.Scheduling = gsSet.Spec.Scheduling
+
 	// Switch to GenerateName, so that we always get a Unique name for the GameServer, and there
 	// can be no collisions
 	gs.ObjectMeta.GenerateName = gsSet.ObjectMeta.Name + "-"
@@ -105,10 +108,10 @@ func (gsSet *GameServerSet) GameServer() *GameServer {
 	gs.ObjectMeta.OwnerReferences = append(gs.ObjectMeta.OwnerReferences, *ref)
 
 	if gs.ObjectMeta.Labels == nil {
-		gs.ObjectMeta.Labels = make(map[string]string, 1)
+		gs.ObjectMeta.Labels = make(map[string]string, 2)
 	}
 
 	gs.ObjectMeta.Labels[GameServerSetGameServerLabel] = gsSet.ObjectMeta.Name
-
+	gs.ObjectMeta.Labels[FleetNameLabel] = gsSet.ObjectMeta.Labels[FleetNameLabel]
 	return gs
 }

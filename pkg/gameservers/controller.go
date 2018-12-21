@@ -17,6 +17,7 @@ package gameservers
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"agones.dev/agones/pkg/apis/stable"
 	"agones.dev/agones/pkg/apis/stable/v1alpha1"
@@ -37,6 +38,7 @@ import (
 	extclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -58,6 +60,8 @@ type Controller struct {
 	logger                 *logrus.Entry
 	sidecarImage           string
 	alwaysPullSidecarImage bool
+	sidecarCPURequest      resource.Quantity
+	sidecarCPULimit        resource.Quantity
 	crdGetter              v1beta1.CustomResourceDefinitionInterface
 	podGetter              typedcorev1.PodsGetter
 	podLister              corelisterv1.PodLister
@@ -69,17 +73,22 @@ type Controller struct {
 	portAllocator          *PortAllocator
 	healthController       *HealthController
 	workerqueue            *workerqueue.WorkerQueue
-	stop                   <-chan struct{}
-	recorder               record.EventRecorder
+	allocationMutex        *sync.Mutex
+	stop                   <-chan struct {
+	}
+	recorder record.EventRecorder
 }
 
 // NewController returns a new gameserver crd controller
 func NewController(
 	wh *webhooks.WebHook,
 	health healthcheck.Handler,
+	allocationMutex *sync.Mutex,
 	minPort, maxPort int32,
 	sidecarImage string,
 	alwaysPullSidecarImage bool,
+	sidecarCPURequest resource.Quantity,
+	sidecarCPULimit resource.Quantity,
 	kubeClient kubernetes.Interface,
 	kubeInformerFactory informers.SharedInformerFactory,
 	extClient extclientset.Interface,
@@ -92,7 +101,10 @@ func NewController(
 
 	c := &Controller{
 		sidecarImage:           sidecarImage,
+		sidecarCPULimit:        sidecarCPULimit,
+		sidecarCPURequest:      sidecarCPURequest,
 		alwaysPullSidecarImage: alwaysPullSidecarImage,
+		allocationMutex:        allocationMutex,
 		crdGetter:              extClient.ApiextensionsV1beta1().CustomResourceDefinitions(),
 		podGetter:              kubeClient.CoreV1(),
 		podLister:              pods.Lister(),
@@ -353,16 +365,13 @@ func (c *Controller) syncGameServerPortAllocationState(gs *v1alpha1.GameServer) 
 		return gs, nil
 	}
 
-	gsCopy, err := c.portAllocator.Allocate(gs.DeepCopy())
-	if err != nil {
-		return gsCopy, errors.Wrapf(err, "error allocating port for GameServer %s", gsCopy.Name)
-	}
+	gsCopy := c.portAllocator.Allocate(gs.DeepCopy())
 
 	gsCopy.Status.State = v1alpha1.Creating
 	c.recorder.Event(gs, corev1.EventTypeNormal, string(gs.Status.State), "Port allocated")
 
 	c.logger.WithField("gs", gsCopy).Info("Syncing Port Allocation State")
-	gs, err = c.gameServerGetter.GameServers(gs.ObjectMeta.Namespace).Update(gsCopy)
+	gs, err := c.gameServerGetter.GameServers(gs.ObjectMeta.Namespace).Update(gsCopy)
 	if err != nil {
 		// if the GameServer doesn't get updated with the port data, then put the port
 		// back in the pool, as it will get retried on the next pass
@@ -459,6 +468,7 @@ func (c *Controller) sidecar(gs *v1alpha1.GameServer) corev1.Container {
 				},
 			},
 		},
+		Resources: corev1.ResourceRequirements{},
 		LivenessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
@@ -470,6 +480,15 @@ func (c *Controller) sidecar(gs *v1alpha1.GameServer) corev1.Container {
 			PeriodSeconds:       3,
 		},
 	}
+
+	if !c.sidecarCPURequest.IsZero() {
+		sidecar.Resources.Requests = corev1.ResourceList{corev1.ResourceCPU: c.sidecarCPURequest}
+	}
+
+	if !c.sidecarCPULimit.IsZero() {
+		sidecar.Resources.Limits = corev1.ResourceList{corev1.ResourceCPU: c.sidecarCPULimit}
+	}
+
 	if c.alwaysPullSidecarImage {
 		sidecar.ImagePullPolicy = corev1.PullAlways
 	}
@@ -608,7 +627,9 @@ func (c *Controller) syncGameServerShutdownState(gs *v1alpha1.GameServer) error 
 	// be explicit about where to delete. We only need to wait for the Pod to be removed, which we handle with our
 	// own finalizer.
 	p := metav1.DeletePropagationBackground
+	c.allocationMutex.Lock()
 	err := c.gameServerGetter.GameServers(gs.ObjectMeta.Namespace).Delete(gs.ObjectMeta.Name, &metav1.DeleteOptions{PropagationPolicy: &p})
+	c.allocationMutex.Unlock()
 	if err != nil {
 		return errors.Wrapf(err, "error deleting Game Server %s", gs.ObjectMeta.Name)
 	}

@@ -1,6 +1,138 @@
-# Change Log
+# Changelog
+
+## [v0.6.0](https://github.com/GoogleCloudPlatform/agones/tree/v0.6.0) (2018-11-28)
+
+[Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.6.0-rc...v0.6.0)
+
+**Closed issues:**
+
+- Release 0.6.0.rc [\#424](https://github.com/GoogleCloudPlatform/agones/issues/424)
+
+## [v0.6.0-rc](https://github.com/GoogleCloudPlatform/agones/tree/v0.6.0-rc) (2018-11-21)
+
+[Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.5.0...v0.6.0-rc)
+
+**Implemented enhancements:**
+
+- Using the Cluster Autoscaler with Agones [\#368](https://github.com/GoogleCloudPlatform/agones/issues/368)
+- Agones sdk-server sidecar should have cpu and memory limits [\#344](https://github.com/GoogleCloudPlatform/agones/issues/344)
+- As developer, I want to emulate an allocation in local mode [\#314](https://github.com/GoogleCloudPlatform/agones/issues/314)
+- Document how to configure maximum number of pods/node that can be allocated [\#295](https://github.com/GoogleCloudPlatform/agones/issues/295)
+- Development tools to enable pprof [\#422](https://github.com/GoogleCloudPlatform/agones/pull/422) ([markmandel](https://github.com/markmandel))
+- Changes to the GameServer configuration are reflected in the local sdk server [\#413](https://github.com/GoogleCloudPlatform/agones/pull/413) ([markmandel](https://github.com/markmandel))
+- Mark GameServer Unhealthy if allocated HostPort isn't available [\#408](https://github.com/GoogleCloudPlatform/agones/pull/408) ([markmandel](https://github.com/markmandel))
+- Cluster Autoscaling: safe-to-evict=false annotations for GameServer Pods [\#405](https://github.com/GoogleCloudPlatform/agones/pull/405) ([markmandel](https://github.com/markmandel))
+- Packed: Fleet scaled down removes GameServers from least used Nodes [\#401](https://github.com/GoogleCloudPlatform/agones/pull/401) ([markmandel](https://github.com/markmandel))
+- Packed: PreferredDuringSchedulingIgnoredDuringExecution PodAffinity with a HostName topology [\#397](https://github.com/GoogleCloudPlatform/agones/pull/397) ([markmandel](https://github.com/markmandel))
+- Specify CPU Request for the SDK Server Sidecar [\#390](https://github.com/GoogleCloudPlatform/agones/pull/390) ([markmandel](https://github.com/markmandel))
+- Mount point for helm config [\#383](https://github.com/GoogleCloudPlatform/agones/pull/383) ([markmandel](https://github.com/markmandel))
+- Add crd-install helm hook to crds templates [\#375](https://github.com/GoogleCloudPlatform/agones/pull/375) ([smoya](https://github.com/smoya))
+- Prioritise Allocation from Nodes with Allocated/Ready GameServers [\#370](https://github.com/GoogleCloudPlatform/agones/pull/370) ([markmandel](https://github.com/markmandel))
+
+**Fixed bugs:**
+
+- Admission webhook "mutations.stable.agones.dev" errors with Invalid FleetAutoscaler [\#406](https://github.com/GoogleCloudPlatform/agones/issues/406)
+- Ports should always be allocated to a GameServer [\#415](https://github.com/GoogleCloudPlatform/agones/pull/415) ([markmandel](https://github.com/markmandel))
+- Apparently patching events is a thing. [\#402](https://github.com/GoogleCloudPlatform/agones/pull/402) ([markmandel](https://github.com/markmandel))
+
+**Closed issues:**
+
+- Release 0.5.0 [\#387](https://github.com/GoogleCloudPlatform/agones/issues/387)
+
+**Merged pull requests:**
+
+- Release 0.6.0-rc [\#425](https://github.com/GoogleCloudPlatform/agones/pull/425) ([markmandel](https://github.com/markmandel))
+- More stringent linting rules \(and update linter\) [\#417](https://github.com/GoogleCloudPlatform/agones/pull/417) ([markmandel](https://github.com/markmandel))
+- FleetAutoscaler can be targeted at Non Existent Fleets [\#416](https://github.com/GoogleCloudPlatform/agones/pull/416) ([markmandel](https://github.com/markmandel))
+- Adding colour to the linter, because colours are pretty. [\#400](https://github.com/GoogleCloudPlatform/agones/pull/400) ([markmandel](https://github.com/markmandel))
+- Process to become an reviewer/approver on Agones. [\#399](https://github.com/GoogleCloudPlatform/agones/pull/399) ([markmandel](https://github.com/markmandel))
+- Update Helm to 2.11.0 [\#396](https://github.com/GoogleCloudPlatform/agones/pull/396) ([markmandel](https://github.com/markmandel))
+- Make sure do-release always uses the release\_registry [\#394](https://github.com/GoogleCloudPlatform/agones/pull/394) ([markmandel](https://github.com/markmandel))
+- Adding third part videos and presentations. [\#393](https://github.com/GoogleCloudPlatform/agones/pull/393) ([markmandel](https://github.com/markmandel))
+- TOC for the SDK integration and tooling [\#392](https://github.com/GoogleCloudPlatform/agones/pull/392) ([markmandel](https://github.com/markmandel))
+- Set test clusters to base version. GKE will work out the rest. [\#391](https://github.com/GoogleCloudPlatform/agones/pull/391) ([markmandel](https://github.com/markmandel))
+- Post 0.5.0 Updates [\#389](https://github.com/GoogleCloudPlatform/agones/pull/389) ([markmandel](https://github.com/markmandel))
+- Update to Go 1.11.1 [\#385](https://github.com/GoogleCloudPlatform/agones/pull/385) ([markmandel](https://github.com/markmandel))
+
+## [v0.5.0](https://github.com/GoogleCloudPlatform/agones/tree/v0.5.0) (2018-10-16)
+
+[Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.5.0-rc...v0.5.0)
+
+**Fixed bugs:**
+
+- Tutorial fails @ Step 5 due to RBAC issues if you have capital letters in your gcloud account name [\#282](https://github.com/GoogleCloudPlatform/agones/issues/282)
+
+**Closed issues:**
+
+- Release 0.5.0.rc [\#378](https://github.com/GoogleCloudPlatform/agones/issues/378)
+
+**Merged pull requests:**
+
+- Change for the 0.5.0 release. [\#388](https://github.com/GoogleCloudPlatform/agones/pull/388) ([markmandel](https://github.com/markmandel))
+- Troubleshooting guide for issues with Agones. [\#384](https://github.com/GoogleCloudPlatform/agones/pull/384) ([markmandel](https://github.com/markmandel))
+- Spec docs for FleetAutoscaler [\#381](https://github.com/GoogleCloudPlatform/agones/pull/381) ([markmandel](https://github.com/markmandel))
+- Post 0.5.0-rc updates [\#380](https://github.com/GoogleCloudPlatform/agones/pull/380) ([markmandel](https://github.com/markmandel))
+
+## [v0.5.0-rc](https://github.com/GoogleCloudPlatform/agones/tree/v0.5.0-rc) (2018-10-09)
+
+[Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.4.0...v0.5.0-rc)
+
+**Implemented enhancements:**
+
+- Improve support for developing in custom environments [\#348](https://github.com/GoogleCloudPlatform/agones/issues/348)
+- Agones helm repo [\#285](https://github.com/GoogleCloudPlatform/agones/issues/285)
+- Add Amazon EKS Agones Setup Instructions [\#372](https://github.com/GoogleCloudPlatform/agones/pull/372) ([GabeBigBoxVR](https://github.com/GabeBigBoxVR))
+- Agones stable helm repository [\#361](https://github.com/GoogleCloudPlatform/agones/pull/361) ([Kuqd](https://github.com/Kuqd))
+- Improve support for custom dev environments [\#349](https://github.com/GoogleCloudPlatform/agones/pull/349) ([victor-prodan](https://github.com/victor-prodan))
+- FleetAutoScaler v0 [\#340](https://github.com/GoogleCloudPlatform/agones/pull/340) ([victor-prodan](https://github.com/victor-prodan))
+- Forces restart when using tls generation. [\#338](https://github.com/GoogleCloudPlatform/agones/pull/338) ([Kuqd](https://github.com/Kuqd))
+
+**Fixed bugs:**
+
+- Fix loophole in game server initialization [\#354](https://github.com/GoogleCloudPlatform/agones/issues/354)
+- Health messages logged with wrong severity [\#335](https://github.com/GoogleCloudPlatform/agones/issues/335)
+- Helm upgrade and SSL certificates [\#309](https://github.com/GoogleCloudPlatform/agones/issues/309)
+- Fix for race condition: Allocation of Deleting GameServers Possible [\#367](https://github.com/GoogleCloudPlatform/agones/pull/367) ([markmandel](https://github.com/markmandel))
+- Map level to severity for stackdriver [\#363](https://github.com/GoogleCloudPlatform/agones/pull/363) ([Kuqd](https://github.com/Kuqd))
+- Add ReadTimeout for e2e tests, otherwise this can hang forever. [\#359](https://github.com/GoogleCloudPlatform/agones/pull/359) ([markmandel](https://github.com/markmandel))
+- Fixes race condition bug with Pod not being scheduled before Ready\(\) [\#357](https://github.com/GoogleCloudPlatform/agones/pull/357) ([markmandel](https://github.com/markmandel))
+- Allocation is broken when using the generated go client [\#347](https://github.com/GoogleCloudPlatform/agones/pull/347) ([markmandel](https://github.com/markmandel))
+
+**Security fixes:**
+
+- \[Vuln\] Update to Alpine 3.8.1 [\#355](https://github.com/GoogleCloudPlatform/agones/issues/355)
+- Update Alpine version to 3.8.1 [\#364](https://github.com/GoogleCloudPlatform/agones/pull/364) ([fooock](https://github.com/fooock))
+
+**Closed issues:**
+
+- C++ SDK no destructor body [\#366](https://github.com/GoogleCloudPlatform/agones/issues/366)
+- Release 0.4.0 [\#341](https://github.com/GoogleCloudPlatform/agones/issues/341)
+- Update "Developing, Testing and Building Agones" tutorial with how to push updates to your test cluster [\#308](https://github.com/GoogleCloudPlatform/agones/issues/308)
+- Use revive instead of gometalinter [\#237](https://github.com/GoogleCloudPlatform/agones/issues/237)
+- Integrate a spell and/or grammar check into build system [\#187](https://github.com/GoogleCloudPlatform/agones/issues/187)
+- Helm package CI [\#153](https://github.com/GoogleCloudPlatform/agones/issues/153)
+- Use functional parameters in Controller creation [\#104](https://github.com/GoogleCloudPlatform/agones/issues/104)
+
+**Merged pull requests:**
+
+- Release 0.5.0.rc changes [\#379](https://github.com/GoogleCloudPlatform/agones/pull/379) ([markmandel](https://github.com/markmandel))
+- Make WaitForFleetCondition take up to 5 minutes [\#377](https://github.com/GoogleCloudPlatform/agones/pull/377) ([markmandel](https://github.com/markmandel))
+- Fix for flaky test TestControllerAddress [\#376](https://github.com/GoogleCloudPlatform/agones/pull/376) ([markmandel](https://github.com/markmandel))
+- Fix typo [\#374](https://github.com/GoogleCloudPlatform/agones/pull/374) ([Maxpain177](https://github.com/Maxpain177))
+- Update instructions for Minikube 0.29.0 [\#373](https://github.com/GoogleCloudPlatform/agones/pull/373) ([markmandel](https://github.com/markmandel))
+- Update README.md [\#371](https://github.com/GoogleCloudPlatform/agones/pull/371) ([mohammedfakhar](https://github.com/mohammedfakhar))
+- Remove c++ sdk destructor causing linker errors [\#369](https://github.com/GoogleCloudPlatform/agones/pull/369) ([nikibobi](https://github.com/nikibobi))
+- Update README.md [\#362](https://github.com/GoogleCloudPlatform/agones/pull/362) ([mohammedfakhar](https://github.com/mohammedfakhar))
+- Upgrade GKE version and increase test cluster size [\#360](https://github.com/GoogleCloudPlatform/agones/pull/360) ([markmandel](https://github.com/markmandel))
+- Fix typo in sdk readme which said only two sdks [\#356](https://github.com/GoogleCloudPlatform/agones/pull/356) ([ReDucTor](https://github.com/ReDucTor))
+- Add allocator service example and documentation [\#353](https://github.com/GoogleCloudPlatform/agones/pull/353) ([slartibaartfast](https://github.com/slartibaartfast))
+- Adding goimports back into the build shell. [\#352](https://github.com/GoogleCloudPlatform/agones/pull/352) ([markmandel](https://github.com/markmandel))
+- e2e tests for Fleet Scaling and Updates [\#351](https://github.com/GoogleCloudPlatform/agones/pull/351) ([markmandel](https://github.com/markmandel))
+- Switch to golangci-lint [\#346](https://github.com/GoogleCloudPlatform/agones/pull/346) ([Kuqd](https://github.com/Kuqd))
+- Prepare for next release - 0.5.0.rc [\#343](https://github.com/GoogleCloudPlatform/agones/pull/343) ([markmandel](https://github.com/markmandel))
 
 ## [v0.4.0](https://github.com/GoogleCloudPlatform/agones/tree/v0.4.0) (2018-09-04)
+
 [Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.4.0.rc...v0.4.0)
 
 **Closed issues:**
@@ -9,11 +141,13 @@
 
 **Merged pull requests:**
 
+- Release 0.4.0 [\#342](https://github.com/GoogleCloudPlatform/agones/pull/342) ([markmandel](https://github.com/markmandel))
 - Fix yaml file paths [\#339](https://github.com/GoogleCloudPlatform/agones/pull/339) ([oskoi](https://github.com/oskoi))
 - Add Troubleshooting section to Build doc [\#337](https://github.com/GoogleCloudPlatform/agones/pull/337) ([victor-prodan](https://github.com/victor-prodan))
 - Preparing for 0.4.0 release next week. [\#333](https://github.com/GoogleCloudPlatform/agones/pull/333) ([markmandel](https://github.com/markmandel))
 
 ## [v0.4.0.rc](https://github.com/GoogleCloudPlatform/agones/tree/v0.4.0.rc) (2018-08-28)
+
 [Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.3.0...v0.4.0.rc)
 
 **Implemented enhancements:**
@@ -25,9 +159,9 @@
 - Ability to pass `GameServer` yaml/json to local sdk server [\#328](https://github.com/GoogleCloudPlatform/agones/pull/328) ([markmandel](https://github.com/markmandel))
 - Move Status \> Address & Ports population to `Creating` state processing [\#326](https://github.com/GoogleCloudPlatform/agones/pull/326) ([markmandel](https://github.com/markmandel))
 - Implement SDK SetLabel and SetAnnotation functionality [\#323](https://github.com/GoogleCloudPlatform/agones/pull/323) ([markmandel](https://github.com/markmandel))
-- Metadata propagation from fleet allocation to game server [\#312](https://github.com/GoogleCloudPlatform/agones/pull/312) ([victor-prodan](https://github.com/victor-prodan))
-- Features/e2e [\#315](https://github.com/GoogleCloudPlatform/agones/pull/315) ([Kuqd](https://github.com/Kuqd))
 - Implements SDK callback for GameServer updates [\#316](https://github.com/GoogleCloudPlatform/agones/pull/316) ([markmandel](https://github.com/markmandel))
+- Features/e2e [\#315](https://github.com/GoogleCloudPlatform/agones/pull/315) ([Kuqd](https://github.com/Kuqd))
+- Metadata propagation from fleet allocation to game server [\#312](https://github.com/GoogleCloudPlatform/agones/pull/312) ([victor-prodan](https://github.com/victor-prodan))
 
 **Fixed bugs:**
 
@@ -57,6 +191,7 @@
 - Update to move from release to the next version \(0.4.0.rc\) [\#306](https://github.com/GoogleCloudPlatform/agones/pull/306) ([markmandel](https://github.com/markmandel))
 
 ## [v0.3.0](https://github.com/GoogleCloudPlatform/agones/tree/v0.3.0) (2018-07-26)
+
 [Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.3.0.rc...v0.3.0)
 
 **Fixed bugs:**
@@ -73,7 +208,12 @@
 - Move back to 0.3.0 [\#292](https://github.com/GoogleCloudPlatform/agones/pull/292) ([markmandel](https://github.com/markmandel))
 
 ## [v0.3.0.rc](https://github.com/GoogleCloudPlatform/agones/tree/v0.3.0.rc) (2018-07-17)
+
 [Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.2.0...v0.3.0.rc)
+
+**Breaking changes:**
+
+- \[Breaking Change\] Multiple port support for `GameServer` [\#283](https://github.com/GoogleCloudPlatform/agones/pull/283) ([markmandel](https://github.com/markmandel))
 
 **Implemented enhancements:**
 
@@ -81,7 +221,6 @@
 - supporting multiple ports [\#151](https://github.com/GoogleCloudPlatform/agones/issues/151)
 - Support Cluster Node addition/deletion [\#60](https://github.com/GoogleCloudPlatform/agones/issues/60)
 - SDK `GameServer\(\)` function for retrieving backing GameServer configuration [\#288](https://github.com/GoogleCloudPlatform/agones/pull/288) ([markmandel](https://github.com/markmandel))
-- \[Breaking Change\] Multiple port support for `GameServer` [\#283](https://github.com/GoogleCloudPlatform/agones/pull/283) ([markmandel](https://github.com/markmandel))
 - Move cluster node addition/removal out of "experimental" [\#271](https://github.com/GoogleCloudPlatform/agones/pull/271) ([markmandel](https://github.com/markmandel))
 - added information about Agones running on Azure Kubernetes Service [\#269](https://github.com/GoogleCloudPlatform/agones/pull/269) ([dgkanatsios](https://github.com/dgkanatsios))
 - Expose SDK-Server at HTTP+JSON [\#265](https://github.com/GoogleCloudPlatform/agones/pull/265) ([markmandel](https://github.com/markmandel))
@@ -89,6 +228,7 @@
 
 **Fixed bugs:**
 
+- Error running make install with GKE [\#258](https://github.com/GoogleCloudPlatform/agones/issues/258)
 - Minikube does not start with 0.26.x [\#192](https://github.com/GoogleCloudPlatform/agones/issues/192)
 - Forgot to update the k8s client-go codegen. [\#281](https://github.com/GoogleCloudPlatform/agones/pull/281) ([markmandel](https://github.com/markmandel))
 - Fix bug with hung GameServer resource on Kubernetes 1.10 [\#278](https://github.com/GoogleCloudPlatform/agones/pull/278) ([markmandel](https://github.com/markmandel))
@@ -97,10 +237,12 @@
 **Closed issues:**
 
 - Agones on Azure AKS [\#254](https://github.com/GoogleCloudPlatform/agones/issues/254)
+- Release v0.2.0 [\#242](https://github.com/GoogleCloudPlatform/agones/issues/242)
 - helm namespace [\#212](https://github.com/GoogleCloudPlatform/agones/issues/212)
 
 **Merged pull requests:**
 
+- Release 0.3.0.rc [\#291](https://github.com/GoogleCloudPlatform/agones/pull/291) ([markmandel](https://github.com/markmandel))
 - Update README.md with information about Public IPs on AKS [\#289](https://github.com/GoogleCloudPlatform/agones/pull/289) ([dgkanatsios](https://github.com/dgkanatsios))
 - fix yaml install link [\#286](https://github.com/GoogleCloudPlatform/agones/pull/286) ([nikibobi](https://github.com/nikibobi))
 - install.yaml now installs by default in agones-system [\#284](https://github.com/GoogleCloudPlatform/agones/pull/284) ([Kuqd](https://github.com/Kuqd))
@@ -126,25 +268,27 @@
 - use the helm --namespace convention  [\#250](https://github.com/GoogleCloudPlatform/agones/pull/250) ([Kuqd](https://github.com/Kuqd))
 - fix podspec template broken link to documentation [\#247](https://github.com/GoogleCloudPlatform/agones/pull/247) ([Kuqd](https://github.com/Kuqd))
 - Make Cloud Builder Faster [\#245](https://github.com/GoogleCloudPlatform/agones/pull/245) ([markmandel](https://github.com/markmandel))
+- Increment base version [\#244](https://github.com/GoogleCloudPlatform/agones/pull/244) ([markmandel](https://github.com/markmandel))
 - Lock protoc-gen-go to 1.0 release [\#241](https://github.com/GoogleCloudPlatform/agones/pull/241) ([markmandel](https://github.com/markmandel))
 
 ## [v0.2.0](https://github.com/GoogleCloudPlatform/agones/tree/v0.2.0) (2018-06-06)
+
 [Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.2.0.rc...v0.2.0)
 
 **Closed issues:**
 
-- Release v0.2.0 [\#242](https://github.com/GoogleCloudPlatform/agones/issues/242)
 - Release v0.2.0.rc [\#231](https://github.com/GoogleCloudPlatform/agones/issues/231)
 
 **Merged pull requests:**
 
 - Release 0.2.0 [\#243](https://github.com/GoogleCloudPlatform/agones/pull/243) ([markmandel](https://github.com/markmandel))
 - Adding my streaming development to contributing [\#239](https://github.com/GoogleCloudPlatform/agones/pull/239) ([markmandel](https://github.com/markmandel))
+- Updates to release process [\#235](https://github.com/GoogleCloudPlatform/agones/pull/235) ([markmandel](https://github.com/markmandel))
 - Adding a README.md file for the simple-udp to help developer to get start [\#234](https://github.com/GoogleCloudPlatform/agones/pull/234) ([g-ericso](https://github.com/g-ericso))
 - Revert install configuration back to 0.2.0 [\#233](https://github.com/GoogleCloudPlatform/agones/pull/233) ([markmandel](https://github.com/markmandel))
-- Increment base version [\#244](https://github.com/GoogleCloudPlatform/agones/pull/244) ([markmandel](https://github.com/markmandel))
 
 ## [v0.2.0.rc](https://github.com/GoogleCloudPlatform/agones/tree/v0.2.0.rc) (2018-05-30)
+
 [Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/v0.1...v0.2.0.rc)
 
 **Implemented enhancements:**
@@ -181,6 +325,10 @@
 - Point the install.yaml to the release-0.1 branch [\#189](https://github.com/GoogleCloudPlatform/agones/pull/189) ([markmandel](https://github.com/markmandel))
 - Fixed missing links in documentation. [\#166](https://github.com/GoogleCloudPlatform/agones/pull/166) ([fooock](https://github.com/fooock))
 
+**Security fixes:**
+
+- RBAC: controller doesn't need fleet create [\#202](https://github.com/GoogleCloudPlatform/agones/pull/202) ([markmandel](https://github.com/markmandel))
+
 **Closed issues:**
 
 - helm RBAC on/off [\#211](https://github.com/GoogleCloudPlatform/agones/issues/211)
@@ -194,7 +342,6 @@
 
 **Merged pull requests:**
 
-- Updates to release process [\#235](https://github.com/GoogleCloudPlatform/agones/pull/235) ([markmandel](https://github.com/markmandel))
 - Release v0.2.0.rc [\#232](https://github.com/GoogleCloudPlatform/agones/pull/232) ([markmandel](https://github.com/markmandel))
 - do-release release registry and upstream push [\#228](https://github.com/GoogleCloudPlatform/agones/pull/228) ([markmandel](https://github.com/markmandel))
 - Archive C++ src on build and release [\#227](https://github.com/GoogleCloudPlatform/agones/pull/227) ([markmandel](https://github.com/markmandel))
@@ -212,7 +359,6 @@
 - Clearer docs on developing and building from source [\#206](https://github.com/GoogleCloudPlatform/agones/pull/206) ([markmandel](https://github.com/markmandel))
 - Add formatting guidelines to CONTRIBUTING.md [\#205](https://github.com/GoogleCloudPlatform/agones/pull/205) ([enocom](https://github.com/enocom))
 - Fleet docs: Some missing pieces. [\#204](https://github.com/GoogleCloudPlatform/agones/pull/204) ([markmandel](https://github.com/markmandel))
-- RBAC: controller doesn't need fleet create [\#202](https://github.com/GoogleCloudPlatform/agones/pull/202) ([markmandel](https://github.com/markmandel))
 - Release version, and twitter badges. [\#201](https://github.com/GoogleCloudPlatform/agones/pull/201) ([markmandel](https://github.com/markmandel))
 - Typo in GameServer json [\#200](https://github.com/GoogleCloudPlatform/agones/pull/200) ([markmandel](https://github.com/markmandel))
 - Install docs: minikube 0.25.2 and k8s 1.9.4 [\#195](https://github.com/GoogleCloudPlatform/agones/pull/195) ([markmandel](https://github.com/markmandel))
@@ -246,6 +392,9 @@
 - Centralise the canonical import paths and more package docs [\#130](https://github.com/GoogleCloudPlatform/agones/pull/130) ([markmandel](https://github.com/markmandel))
 
 ## [v0.1](https://github.com/GoogleCloudPlatform/agones/tree/v0.1) (2018-03-06)
+
+[Full Changelog](https://github.com/GoogleCloudPlatform/agones/compare/20f6ab798a49e3629d5f6651201504ff49ea251a...v0.1)
+
 **Implemented enhancements:**
 
 - The local mode of the agon sidecar listen to localhost only [\#62](https://github.com/GoogleCloudPlatform/agones/issues/62)
@@ -297,6 +446,11 @@
 - Use the preferred ENTRYPOINT format [\#43](https://github.com/GoogleCloudPlatform/agones/pull/43) ([markmandel](https://github.com/markmandel))
 - Update Kubernetes dependencies to release branch [\#24](https://github.com/GoogleCloudPlatform/agones/pull/24) ([markmandel](https://github.com/markmandel))
 
+**Security fixes:**
+
+- Switch to RBAC [\#57](https://github.com/GoogleCloudPlatform/agones/issues/57)
+- Upgrade to Go 1.9.4 [\#81](https://github.com/GoogleCloudPlatform/agones/pull/81) ([markmandel](https://github.com/markmandel))
+
 **Closed issues:**
 
 - `make do-release` target [\#115](https://github.com/GoogleCloudPlatform/agones/issues/115)
@@ -305,7 +459,6 @@
 - Health check should be moved out of `gameservers/controller.go` [\#88](https://github.com/GoogleCloudPlatform/agones/issues/88)
 - Add archiving the sdk-server binaries into gcs into the cloudbuild.yaml [\#87](https://github.com/GoogleCloudPlatform/agones/issues/87)
 - Upgrade to Go 1.9.3 [\#63](https://github.com/GoogleCloudPlatform/agones/issues/63)
-- Switch to RBAC [\#57](https://github.com/GoogleCloudPlatform/agones/issues/57)
 - Building Agon on Windows [\#47](https://github.com/GoogleCloudPlatform/agones/issues/47)
 - Building Agones on macOS [\#46](https://github.com/GoogleCloudPlatform/agones/issues/46)
 - Write documentation for creating a GameServer [\#45](https://github.com/GoogleCloudPlatform/agones/issues/45)
@@ -350,7 +503,6 @@
 - Update everything to be Kubernetes 1.9+ [\#85](https://github.com/GoogleCloudPlatform/agones/pull/85) ([markmandel](https://github.com/markmandel))
 - Expand on contributing documentation. [\#84](https://github.com/GoogleCloudPlatform/agones/pull/84) ([markmandel](https://github.com/markmandel))
 - Remove entrypoints in makefile. [\#82](https://github.com/GoogleCloudPlatform/agones/pull/82) ([Kuqd](https://github.com/Kuqd))
-- Upgrade to Go 1.9.4 [\#81](https://github.com/GoogleCloudPlatform/agones/pull/81) ([markmandel](https://github.com/markmandel))
 - Update to client-go release 1.6 [\#80](https://github.com/GoogleCloudPlatform/agones/pull/80) ([markmandel](https://github.com/markmandel))
 - Setup for social/get involved section. [\#79](https://github.com/GoogleCloudPlatform/agones/pull/79) ([markmandel](https://github.com/markmandel))
 - Changing name from Agon =\> Agones. [\#78](https://github.com/GoogleCloudPlatform/agones/pull/78) ([markmandel](https://github.com/markmandel))
@@ -361,7 +513,6 @@
 - Update Xonotic demo to use dynamic ports [\#72](https://github.com/GoogleCloudPlatform/agones/pull/72) ([markmandel](https://github.com/markmandel))
 - Basic structure for better documentation [\#68](https://github.com/GoogleCloudPlatform/agones/pull/68) ([markmandel](https://github.com/markmandel))
 - Update gke-test-cluster admin password to new minimum length 16 chars. [\#65](https://github.com/GoogleCloudPlatform/agones/pull/65) ([dzlier-gcp](https://github.com/dzlier-gcp))
-- Bring rbac up to date with master [\#64](https://github.com/GoogleCloudPlatform/agones/pull/64) ([dzlier-gcp](https://github.com/dzlier-gcp))
 - Output the stack error as an actual array [\#61](https://github.com/GoogleCloudPlatform/agones/pull/61) ([markmandel](https://github.com/markmandel))
 - Update documentation [\#53](https://github.com/GoogleCloudPlatform/agones/pull/53) ([Kuqd](https://github.com/Kuqd))
 - Correct maximum parameter typo [\#52](https://github.com/GoogleCloudPlatform/agones/pull/52) ([Kuqd](https://github.com/Kuqd))
@@ -378,4 +529,4 @@
 
 
 
-\* *This Change Log was automatically generated by [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator)*
+\* *This Changelog was automatically generated by [github_changelog_generator](https://github.com/github-changelog-generator/github-changelog-generator)*

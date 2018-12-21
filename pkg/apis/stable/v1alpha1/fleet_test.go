@@ -20,18 +20,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestFleetGameServerSetGameServer(t *testing.T) {
 	f := Fleet{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "namespace",
 			UID:       "1234",
 		},
 		Spec: FleetSpec{
-			Replicas: 10,
+			Replicas:   10,
+			Scheduling: Packed,
 			Template: GameServerTemplateSpec{
 				Spec: GameServerSpec{
 					Ports: []GameServerPort{{ContainerPort: 1234}},
@@ -49,10 +50,11 @@ func TestFleetGameServerSetGameServer(t *testing.T) {
 	assert.Equal(t, "", gsSet.ObjectMeta.Name)
 	assert.Equal(t, f.ObjectMeta.Namespace, gsSet.ObjectMeta.Namespace)
 	assert.Equal(t, f.ObjectMeta.Name+"-", gsSet.ObjectMeta.GenerateName)
-	assert.Equal(t, f.ObjectMeta.Name, gsSet.ObjectMeta.Labels[FleetGameServerSetLabel])
+	assert.Equal(t, f.ObjectMeta.Name, gsSet.ObjectMeta.Labels[FleetNameLabel])
 	assert.Equal(t, int32(0), gsSet.Spec.Replicas)
+	assert.Equal(t, f.Spec.Scheduling, gsSet.Spec.Scheduling)
 	assert.Equal(t, f.Spec.Template, gsSet.Spec.Template)
-	assert.True(t, v1.IsControlledBy(gsSet, &f))
+	assert.True(t, metav1.IsControlledBy(gsSet, &f))
 }
 
 func TestFleetApplyDefaults(t *testing.T) {
@@ -60,11 +62,13 @@ func TestFleetApplyDefaults(t *testing.T) {
 
 	// gate
 	assert.EqualValues(t, "", f.Spec.Strategy.Type)
+	assert.EqualValues(t, "", f.Spec.Scheduling)
 
 	f.ApplyDefaults()
 	assert.Equal(t, appsv1.RollingUpdateDeploymentStrategyType, f.Spec.Strategy.Type)
 	assert.Equal(t, "25%", f.Spec.Strategy.RollingUpdate.MaxUnavailable.String())
 	assert.Equal(t, "25%", f.Spec.Strategy.RollingUpdate.MaxSurge.String())
+	assert.Equal(t, Packed, f.Spec.Scheduling)
 }
 
 func TestFleetUpperBoundReplicas(t *testing.T) {

@@ -15,6 +15,10 @@ In this quickstart, we will create a Kubernetes cluster, and populate it with th
    1. [Installing Minikube](#installing-minikube)
    1. [Creating an agones profile](#creating-an-agones-profile)
    1. [Starting Minikube](#starting-minikube)
+1. [Setting up an Amazon Web Services EKS cluster](#setting-up-an-amazon-web-services-eks-cluster)
+    1. [Create EKS Instance](#create-eks-instance)
+    1. [Ensure VPC CNI 1.2 is Running](#ensure-vpc-cni-12-is-running)
+    1. [Follow Normal Instructions to Install](#follow-normal-instructions-to-install)
 1. [Setting up an Azure Kubernetes Service (AKS) cluster](#setting-up-an-azure-kubernetes-service-aks-cluster)
     1. [Choosing your shell](#choosing-your-shell)
     1. [Creating the AKS cluster](#creating-the-aks-cluster)
@@ -94,7 +98,7 @@ To install `gcloud` and `kubectl`, perform the following steps:
 A [cluster][cluster] consists of at least one *cluster master* machine and multiple worker machines called *nodes*: [Compute Engine virtual machine][vms] instances that run the Kubernetes processes necessary to make them part of the cluster.
 
 ```bash
-gcloud container clusters create [CLUSTER_NAME] --cluster-version=1.10 \
+gcloud container clusters create [CLUSTER_NAME] --cluster-version=1.11 \
   --no-enable-legacy-authorization \
   --tags=game-server \
   --enable-basic-auth \
@@ -106,7 +110,7 @@ gcloud container clusters create [CLUSTER_NAME] --cluster-version=1.10 \
 
 Flag explanations:
 
-* cluster-version: Agones requires Kubernetes version 1.9+. Once the default version reaches 1.9, this will no longer be necessary.
+* cluster-version: Agones requires Kubernetes version 1.11+.
 * no-enable-legacy-authorization: This enables RBAC, the authorization scheme used by Agones to control access to resources.
 * tags: Defines the tags that will be attached to new nodes in the cluster. This is to grant access through ports via the firewall created in the next step.
 * enable-basic-auth/password: Sets the master auth scheme for interacting with the cluster.
@@ -149,9 +153,6 @@ a virtualisation solution, such as [VirtualBox][vb] as well.
 [minikube]: https://github.com/kubernetes/minikube#installation
 [vb]: https://www.virtualbox.org
 
-> We recommend installing version [0.28.0 of minikube](https://github.com/kubernetes/minikube/releases/tag/v0.28.0),
-due to issues with other versions
-
 ## Creating an `agones` profile
 
 Let's use a minikube profile for `agones`.
@@ -167,12 +168,36 @@ replaced by a [vm-driver](https://github.com/kubernetes/minikube#requirements) o
 
 ```bash
 minikube start --kubernetes-version v1.10.0 --vm-driver virtualbox \
-    --bootstrapper=localkube \
-    --extra-config=apiserver.Admission.PluginNames=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota \
-    --extra-config=apiserver.Authorization.Mode=RBAC
+		--extra-config=apiserver.admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota \
+		--extra-config=apiserver.authorization-mode=RBAC
 ```
 
 > the --bootstrapper=localkube is required since we aren't using the `default` profile. ([bug](https://github.com/kubernetes/minikube/issues/2717))
+
+# Setting up an Amazon Web Services EKS cluster
+
+## Create EKS Instance
+
+Create your EKS instance using the [Getting Started Guide](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html).
+
+## Ensure VPC CNI 1.2 is Running
+
+EKS does not use the normal Kubernetes networking since it is [incompatible with Amazon VPC networking](https://www.contino.io/insights/kubernetes-is-hard-why-eks-makes-it-easier-for-network-and-security-architects). 
+
+In a console, run this command to get your current cni version
+
+```bash
+kubectl describe daemonset aws-node --namespace kube-system | grep Image | cut -d "/" -f 2
+```
+Output should be `amazon-k8s-cni:1.2.0` or newer. To upgrade to version 1.2, run the following command.
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.2/aws-k8s-cni.yaml
+```
+
+## Follow Normal Instructions to Install
+
+Continue to [Installing Agones](#installing-agones).
 
 # Setting up an Azure Kubernetes Service (AKS) Cluster
 
@@ -198,8 +223,8 @@ AKS_LOCATION=westeurope     # Azure region in which you'll deploy your AKS clust
 az group create --name $AKS_RESOURCE_GROUP --location $AKS_LOCATION
 
 # Create the AKS cluster - this might take some time. Type 'az aks create -h' to see all available options
-# The following command will create a single Node AKS cluster. Node size is Standard A1 v1 and Kubernetes version is 1.9.6. Plus, SSH keys will be generated for you, use --ssh-key-value to provide your values
-az aks create --resource-group $AKS_RESOURCE_GROUP --name $AKS_NAME --node-count 1 --generate-ssh-keys --node-vm-size Standard_A1_v2 --kubernetes-version 1.9.6 --enable-rbac
+# The following command will create a single Node AKS cluster. Node size is Standard A1 v1 and Kubernetes version is 1.11. Plus, SSH keys will be generated for you, use --ssh-key-value to provide your values
+az aks create --resource-group $AKS_RESOURCE_GROUP --name $AKS_NAME --node-count 1 --generate-ssh-keys --node-vm-size Standard_A1_v2 --kubernetes-version 1.11 --enable-rbac
 
 # Install kubectl
 sudo az aks install-cli
@@ -261,17 +286,17 @@ This will install Agones in your cluster.
 ## Install with YAML
 
 We can install Agones to the cluster using the
-[install.yaml](https://github.com/GoogleCloudPlatform/agones/blob/release-0.4.0/install/yaml/install.yaml) file.
+[install.yaml](https://github.com/GoogleCloudPlatform/agones/blob/release-0.6.0/install/yaml/install.yaml) file.
 
 ```bash
 kubectl create namespace agones-system
-kubectl apply -f https://github.com/GoogleCloudPlatform/agones/raw/release-0.4.0/install/yaml/install.yaml
+kubectl apply -f https://github.com/GoogleCloudPlatform/agones/raw/release-0.6.0/install/yaml/install.yaml
 ```
 
 You can also find the install.yaml in the latest `agones-install` zip from the [releases](https://github.com/GoogleCloudPlatform/agones/releases) archive.
 
-> Note: Installing Agones with the `intall.yaml` will setup the TLS certificates stored in this repository for securing
-> kubernetes webhooks communication. If you want to generates new certificates or use your own,
+> Note: Installing Agones with the `install.yaml` will setup the TLS certificates stored in this repository for securing
+> kubernetes webhooks communication. If you want to generate new certificates or use your own,
 > we recommend using the helm installation.
 
 ## Install using Helm
